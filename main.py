@@ -1,72 +1,49 @@
 import asyncio
+import sys
 import os
 import logging
-from src.core.config import GROQ_KEY
-from langchain_openai import ChatOpenAI
+
 from browser_use import Agent, Browser
-from pydantic import Field
+from browser_use.browser.browser import BrowserConfig
+from browser_use.controller.service import Controller
 
-class CustomChatOpenAI(ChatOpenAI):
-    provider: str = Field(default="openai", exclude=True)
+from src.core.agent_harness import build_robust_llm
+from src.core.memory import WorkflowManager
 
-# Set up logging for observability (PRD Section 48/83)
+# Set up logging for observability
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("0xItachi")
 
-async def main():
-    logger.info("Initializing 0xItachi...")
+async def run_agent(task_goal: str):
+    logger.info(f"🚀 Starting 0xItachi Agent...")
+    logger.info(f"🎯 Goal: {task_goal}")
 
-    # 1. Initialize Brain Providers with Fallback Router
-    from src.core.config import OPEN_ROUTER_KEY, NVIDIA_KEY, GROQ_KEY
-    from tests.test_real_life_tasks import FaultTolerantChatRouter, CustomChatOpenAI
-    
-    llm_nvidia = CustomChatOpenAI(
-        model="meta/llama-3.2-90b-vision-instruct",
-        api_key=NVIDIA_KEY,
-        base_url="https://integrate.api.nvidia.com/v1",
-        temperature=0.0
-    )
-    
-    llm_openrouter = CustomChatOpenAI(
-        model="stealth/ox-alpha",
-        api_key=OPEN_ROUTER_KEY,
-        base_url="https://openrouter.ai/api/v1",
-        temperature=0.0
-    )
-    
-    llm_groq = CustomChatOpenAI(
-        model="llama-3.3-70b-versatile",
-        api_key=GROQ_KEY,
-        base_url="https://api.groq.com/openai/v1",
-        temperature=0.0
-    )
-    
-    llm = FaultTolerantChatRouter(models=[llm_openrouter, llm_nvidia, llm_groq])
-    logger.info("Brain Provider configured: OpenRouter ox-alpha -> NVIDIA 90B -> Groq 70B (Fault Tolerant)")
+    # 1. Build Multi-Provider Fault-Tolerant LLM Harness (Groq 120B -> OpenRouter 70B -> NVIDIA NIM 70B)
+    llm = build_robust_llm()
 
-    # 2. Initialize Browser execution layer (Browser Use)
-    from browser_use.browser.browser import Browser, BrowserConfig
-    browser = Browser(config=BrowserConfig(headless=False, disable_security=True))
-    
-    # Task definition
-    task_goal = "Open GitHub and search for Browser Use. Find the repository and summarize what it does."
-    logger.info(f"Task Goal: {task_goal}")
-
-    # 3. Create Agent with Workflow Memory (0xItachi orchestration wrapping Browser Use)
-    from browser_use.controller.service import Controller
-    from src.core.memory import WorkflowManager
-    
+    # 2. Check Persistent Memory for workflow hints
     workflow_manager = WorkflowManager()
     existing_wf = workflow_manager.find_matching_workflow(task_goal)
-    message_context = workflow_manager.format_workflow_hint(existing_wf) if existing_wf else None
-    if message_context:
-        logger.info("🧠 Workflow Memory Context loaded for task execution.")
+    wf_hint = workflow_manager.format_workflow_hint(existing_wf) if existing_wf else None
     
+    system_hint = (
+        "IMPORTANT ACTION RULES: To click an element, use action key 'click_element_by_index' with 'index'. "
+        "To type text, use 'input_text' with 'index' and 'text'. To navigate, use 'go_to_url' with 'url'. Never leave action empty."
+    )
+    if wf_hint:
+        logger.info("🧠 Persistent Memory Match Found! Injecting procedural workflow hint...")
+        message_context = system_hint + "\n\n" + wf_hint
+    else:
+        message_context = system_hint
+
+    # 3. Setup Browser & Action Controller
+    browser = Browser(config=BrowserConfig(headless=False, disable_security=True))
     controller = Controller(exclude_actions=['go_back', 'save_pdf', 'get_sheet_contents', 'clear_selected_range'])
-    
+
+    # 4. Instantiate Agent
     agent = Agent(
         task=task_goal,
         llm=llm,
@@ -75,17 +52,19 @@ async def main():
         message_context=message_context
     )
 
-    # 4. Execute Task & Store Learned Workflow
+    # 5. Run & Save Memory
     try:
-        logger.info("Starting agent execution...")
         result = await agent.run()
-        logger.info("Task completed successfully.")
-        logger.info(f"Result:\n{result}")
+        logger.info("✅ Task completed successfully.")
+        logger.info(f"📋 Result:\n{result}")
         workflow_manager.save_workflow_from_history(task_goal, result)
+        return result
     except Exception as e:
-        logger.error(f"Task failed: {e}")
+        logger.error(f"❌ Task failed: {e}")
+        raise e
     finally:
-        logger.info("Browser session completed.")
+        await browser.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    task = sys.argv[1] if len(sys.argv) > 1 else "Go to https://www.saucedemo.com and log in as standard_user with password secret_sauce"
+    asyncio.run(run_agent(task))
