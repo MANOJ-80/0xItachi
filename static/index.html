@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>0xItachi — Autonomous Web Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090A0F;
+      --card-bg: rgba(18, 20, 29, 0.75);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #00F2FE;
+      --accent-blue: #4FACFE;
+      --accent-purple: #7F00FF;
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+      --success: #10B981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(127, 0, 255, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.12) 0px, transparent 50%);
+      font-family: 'Inter', sans-serif;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 2rem;
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(9, 10, 15, 0.8);
+    }
+
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+    }
+
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.35rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #FFFFFF, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.75rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.75rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #F8FAFC;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      background: rgba(9, 10, 15, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      resize: none;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 15px rgba(79, 172, 254, 0.2);
+    }
+
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      background: rgba(0, 242, 254, 0.1);
+      border-color: var(--accent-cyan);
+      color: #FFF;
+    }
+
+    .btn-submit {
+      margin-top: 1.25rem;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border: none;
+      border-radius: 12px;
+      padding: 0.9rem 1.5rem;
+      color: #FFF;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(127, 0, 255, 0.35);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 242, 254, 0.45);
+    }
+
+    .console-box {
+      background: #050608;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 1rem;
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      overflow-y: auto;
+      max-height: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .log-line {
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+
+    .log-line.status { color: var(--accent-cyan); }
+    .log-line.success { color: var(--success); font-weight: 600; }
+    .log-line.error { color: #EF4444; }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-badge">
+      <div class="logo-icon">0x</div>
+      <div class="logo-text">0xItachi Agent</div>
+    </div>
+    <div class="status-pill">
+      <div class="dot"></div>
+      Zero Rate-Limit Stack Live
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="card-title">🤖 Launch Agent Task</div>
+      <div class="input-group">
+        <textarea id="taskInput" placeholder="Describe the web automation task (e.g., Go to saucedemo.com, login with standard_user & secret_sauce, sort by price low to high...)"></textarea>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Quick Presets:</span>
+        <div class="preset-chips">
+          <div class="chip" onclick="setPreset('SauceDemo Checkout Test')">🛒 SauceDemo Shopping</div>
+          <div class="chip" onclick="setPreset('GitHub Repository Search')">🔍 GitHub Search</div>
+          <div class="chip" onclick="setPreset('Extract Hacker News Headlines')">📰 HackerNews Extract</div>
+        </div>
+      </div>
+
+      <button class="btn-submit" id="runBtn" onclick="submitTask()">Execute Agent Flow 🚀</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚡ Real-Time Execution Console</div>
+      <div class="console-box" id="consoleBox">
+        <div class="log-line">Ready for task submission...</div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    0xItachi Autonomous Browser Agent • Powered by Groq 120B, OpenRouter 70B & NVIDIA NIM
+  </footer>
+
+  <script>
+    const presets = {
+      'SauceDemo Checkout Test': "Go to https://www.saucedemo.com, login with username 'standard_user' and password 'secret_sauce', sort products by 'Price (low to high)', add the cheapest product to cart, navigate to cart, click checkout, fill First Name with 'Autonomous', Last Name with 'Agent', Zip Code with '90210', click Continue, and extract the Total Price from the summary page",
+      'GitHub Repository Search': "Go to https://github.com, search for 'browser-use', navigate to the official repository, and extract the star count and description.",
+      'Extract Hacker News Headlines': "Go to https://news.ycombinator.com and extract the top 3 story titles and points."
+    };
+
+    function setPreset(key) {
+      document.getElementById('taskInput').value = presets[key] || '';
+    }
+
+    async function submitTask() {
+      const task = document.getElementById('taskInput').value.trim();
+      if (!task) return alert("Please enter a task description!");
+
+      const consoleBox = document.getElementById('consoleBox');
+      const runBtn = document.getElementById('runBtn');
+
+      consoleBox.innerHTML = `<div class="log-line status">⏳ Submitting task to 0xItachi backend...</div>`;
+      runBtn.disabled = true;
+      runBtn.innerText = "Executing Agent Task...";
+
+      try {
+        const res = await fetch('/api/run-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task })
+        });
+        const data = await res.json();
+
+        if (data.task_id) {
+          consoleBox.innerHTML += `<div class="log-line status">✅ Task Queued (ID: ${data.task_id.substring(0, 8)}...). Connecting SSE stream...</div>`;
+          listenToTaskStream(data.task_id);
+        } else {
+          consoleBox.innerHTML += `<div class="log-line error">❌ Error: ${data.error || 'Failed to start'}</div>`;
+          runBtn.disabled = false;
+          runBtn.innerText = "Execute Agent Flow 🚀";
+        }
+      } catch (err) {
+        consoleBox.innerHTML += `<div class="log-line error">❌ Network error: ${err.message}</div>`;
+        runBtn.disabled = false;
+        runBtn.innerText = "Execute Agent Flow 🚀";
+      }
+    }
+
+    function listenToTaskStream(taskId) {
+      const eventSource = new EventSource(`/api/task-stream/${taskId}`);
+      const consoleBox = document.getElementById('consoleBox');
+      const runBtn = document.getElementById('runBtn');
+
+      eventSource.onmessage = (e) => {
+        const payload = JSON.parse(e.data);
+        if (payload.type === 'status') {
+          consoleBox.innerHTML += `<div class="log-line status">${payload.data.message}</div>`;
+        } else if (payload.type === 'complete') {
+          consoleBox.innerHTML += `<div class="log-line success">🎉 Task Complete!\nResult: ${payload.data.result}</div>`;
+          eventSource.close();
+          runBtn.disabled = false;
+          runBtn.innerText = "Execute Agent Flow 🚀";
+        } else if (payload.type === 'error') {
+          consoleBox.innerHTML += `<div class="log-line error">❌ Error: ${payload.data.error}</div>`;
+          eventSource.close();
+          runBtn.disabled = false;
+          runBtn.innerText = "Execute Agent Flow 🚀";
+        }
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        runBtn.disabled = false;
+        runBtn.innerText = "Execute Agent Flow 🚀";
+      };
+    }
+  </script>
+</body>
+</html>
