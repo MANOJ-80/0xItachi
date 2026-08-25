@@ -65,12 +65,12 @@ class FaultTolerantRunnable:
         await asyncio.sleep(2.5)
         for r in self.runnables:
             try:
-                # 35s timeout to account for free tier provider cold starts
-                res = await asyncio.wait_for(r.ainvoke(input_data, config=config, **kwargs), timeout=35.0)
+                # 90s timeout to allow full 14B AWQ inference on Colab T4 GPU
+                res = await asyncio.wait_for(r.ainvoke(input_data, config=config, **kwargs), timeout=90.0)
                 return self._sanitize(res)
             except asyncio.TimeoutError:
-                logger.warning("⚠️ Provider timed out after 35s. Falling back to next provider...")
-                last_err = TimeoutError("Provider timed out after 35s")
+                logger.warning("⚠️ Provider timed out after 90s. Falling back to next provider...")
+                last_err = TimeoutError("Provider timed out after 90s")
             except Exception as e:
                 logger.warning(f"⚠️ Provider failed during structured execution: {e}. Falling back to next provider...")
                 last_err = e
@@ -97,10 +97,10 @@ class FaultTolerantChatRouter(BaseChatModel):
         last_exception = None
         for model in self.models:
             try:
-                return await asyncio.wait_for(model._agenerate(messages, stop, run_manager, **kwargs), timeout=35.0)
+                return await asyncio.wait_for(model._agenerate(messages, stop, run_manager, **kwargs), timeout=90.0)
             except asyncio.TimeoutError:
-                logger.warning("⚠️ Model timed out after 35s. Falling back to next...")
-                last_exception = TimeoutError("Model timed out after 35s")
+                logger.warning("⚠️ Model timed out after 90s. Falling back to next...")
+                last_exception = TimeoutError("Model timed out after 90s")
             except Exception as e:
                 last_exception = e
                 logger.warning(f"⚠️ Model failed: {e}. Falling back to next...")
@@ -259,51 +259,40 @@ class GroqStructuredChatOpenAI(CustomChatOpenAI):
         return CustomRunnable()
 
 def build_robust_llm():
-    from src.core.config import GROQ_KEY, NVIDIA_KEY, OPEN_ROUTER_KEY, AIHUBMIX_KEY
+    from src.core.config import GROQ_KEY, NVIDIA_KEY, OPEN_ROUTER_KEY
     
     models = []
     
-    # 0. Primary: Groq GPT-OSS 120B
+    # 0. Primary: Groq GPT-OSS 120B (Ultra-fast ~0.8s inference)
     if GROQ_KEY:
         models.append(GroqStructuredChatOpenAI(
             model="openai/gpt-oss-120b",
             api_key=GROQ_KEY,
             base_url="https://api.groq.com/openai/v1",
             temperature=0.0,
-            timeout=35.0,
+            timeout=25.0,
             max_retries=1
         ))
 
-    # 1. Secondary: OpenRouter Llama 3.3 70B Instruct
+    # 1. Secondary: OpenRouter Llama 3.3 70B Instruct (High quality fast 70B)
     if OPEN_ROUTER_KEY:
         models.append(GroqStructuredChatOpenAI(
             model="meta-llama/llama-3.3-70b-instruct",
             api_key=OPEN_ROUTER_KEY,
             base_url="https://openrouter.ai/api/v1",
             temperature=0.0,
-            timeout=35.0,
+            timeout=25.0,
             max_retries=1
         ))
 
-    # 2. Tertiary: Self-Hosted Google Colab T4 vLLM (Qwen 2.5 7B AWQ - Zero Rate Limits)
-    colab_url = "https://templates-doll-closed-qualify.trycloudflare.com/v1"
-    models.append(GroqStructuredChatOpenAI(
-        model="Qwen/Qwen2.5-7B-Instruct-AWQ",
-        api_key="colab-key",
-        base_url=colab_url,
-        temperature=0.0,
-        timeout=35.0,
-        max_retries=1
-    ))
-
-    # 3. NVIDIA NIM Llama 3.1 70B Instruct
+    # 2. Tertiary: NVIDIA NIM Llama 3.1 70B Instruct (High reliability 70B)
     if NVIDIA_KEY:
         models.append(GroqStructuredChatOpenAI(
             model="meta/llama-3.1-70b-instruct",
             api_key=NVIDIA_KEY,
             base_url="https://integrate.api.nvidia.com/v1",
             temperature=0.0,
-            timeout=35.0,
+            timeout=25.0,
             max_retries=1
         ))
 
