@@ -1,0 +1,54 @@
+{
+  "news.ycombinator.com,_read_headlines,_summarize": {
+    "id": "news.ycombinator.com,_read_headlines,_summarize",
+    "name": "Go to news.ycombinator.com, read the top 3 headlines, and summarize what they are about.",
+    "keywords": [
+      "news.ycombinator.com,",
+      "read",
+      "headlines,",
+      "summarize",
+      "what",
+      "they",
+      "about."
+    ],
+    "runs": 1,
+    "success_runs": 1,
+    "confidence_score": 0.6,
+    "last_updated": "2026-08-24T21:57:14.303125",
+    "procedural_steps": [
+      {
+        "go_to_url": {
+          "url": "https://news.ycombinator.com"
+        }
+      }
+    ]
+  },
+  "news.ycombinator.com_read_the_top": {
+    "id": "news.ycombinator.com_read_the_top",
+    "name": "Go to news.ycombinator.com, read the top 3 headlines, and summarize what they are about.",
+    "keywords": [
+      "news.ycombinator.com",
+      "read",
+      "the",
+      "top",
+      "headlines",
+      "and",
+      "summarize",
+      "what",
+      "they",
+      "are",
+      "about"
+    ],
+    "runs": 5,
+    "success_runs": 5,
+    "confidence_score": 0.99,
+    "last_updated": "2026-08-24T21:57:54.423384",
+    "procedural_steps": [
+      {
+        "go_to_url": {
+          "url": "https://news.ycombinator.com"
+        }
+      }
+    ]
+  }
+}

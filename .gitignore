@@ -1,0 +1,36 @@
+# Environment & Secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+
+# Python Virtual Environments & Caches
+venv/
+env/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs & Temporary Files
+*.log
+logs/
+tmp/
+temp/
+
+# Browser-use & Playwright artifacts
+browser_use_downloads/
+.playwright/
+downloads/
+screenshots/
+
+# IDE & System Files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
