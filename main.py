@@ -30,8 +30,11 @@ async def run_agent(task_goal: str):
     wf_hint = workflow_manager.format_workflow_hint(existing_wf) if existing_wf else None
     
     system_hint = (
-        "IMPORTANT ACTION RULES: To click an element, use action key 'click_element_by_index' with 'index'. "
-        "To type text, use 'input_text' with 'index' and 'text'. To navigate, use 'go_to_url' with 'url'. Never leave action empty."
+        "IMPORTANT ACTION RULES:\n"
+        "1. To click an element, use action key 'click_element_by_index' with 'index'.\n"
+        "2. To type text into an input field, use 'input_text' with 'index' and 'text'.\n"
+        "3. SEARCH & FORM SUBMIT RULE: If a search bar or input field has no separate submit button, use 'send_keys' with keys 'Enter' right after typing into the field!\n"
+        "4. To navigate to a URL, use 'go_to_url' with 'url'. Never leave action empty."
     )
     if wf_hint:
         logger.info("🧠 Persistent Memory Match Found! Injecting procedural workflow hint...")
@@ -49,6 +52,7 @@ async def run_agent(task_goal: str):
         llm=llm,
         browser=browser,
         controller=controller,
+        enable_memory=True,
         message_context=message_context
     )
 

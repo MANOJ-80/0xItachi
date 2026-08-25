@@ -1,52 +1,100 @@
 {
-  "news.ycombinator.com,_read_headlines,_summarize": {
-    "id": "news.ycombinator.com,_read_headlines,_summarize",
-    "name": "Go to news.ycombinator.com, read the top 3 headlines, and summarize what they are about.",
+  "github_search_browser_use": {
+    "id": "github_search_browser_use",
+    "name": "Go to https://github.com, search for 'browser-use', navigate to the official repository, and extract the star count and description.",
     "keywords": [
-      "news.ycombinator.com,",
-      "read",
-      "headlines,",
-      "summarize",
-      "what",
-      "they",
-      "about."
+      "github",
+      "search",
+      "browser",
+      "use",
+      "navigate",
+      "official",
+      "repository",
+      "extract",
+      "star",
+      "count",
+      "description"
     ],
     "runs": 1,
     "success_runs": 1,
     "confidence_score": 0.6,
-    "last_updated": "2026-08-24T21:57:14.303125",
+    "last_updated": "2026-08-25T22:10:03.803860",
     "procedural_steps": [
       {
         "go_to_url": {
-          "url": "https://news.ycombinator.com"
+          "url": "https://github.com"
+        }
+      },
+      {
+        "input_text": {
+          "index": 7,
+          "text": "browser-use"
+        }
+      },
+      {
+        "input_text": {
+          "index": 1,
+          "text": "browser-use"
+        }
+      },
+      {
+        "send_keys": {
+          "keys": "Enter"
+        }
+      },
+      {
+        "click_element_by_index": {
+          "index": 38
+        }
+      },
+      {
+        "extract_content": {
+          "goal": "Extract the star count and description",
+          "should_strip_link_urls": false
         }
       }
     ]
   },
-  "news.ycombinator.com_read_the_top": {
-    "id": "news.ycombinator.com_read_the_top",
-    "name": "Go to news.ycombinator.com, read the top 3 headlines, and summarize what they are about.",
+  "search_browser_use_github": {
+    "id": "search_browser_use_github",
+    "name": "search for browser-use in github",
     "keywords": [
-      "news.ycombinator.com",
-      "read",
-      "the",
-      "top",
-      "headlines",
-      "and",
-      "summarize",
-      "what",
-      "they",
-      "are",
-      "about"
+      "search",
+      "browser",
+      "use",
+      "github"
     ],
-    "runs": 5,
-    "success_runs": 5,
-    "confidence_score": 0.99,
-    "last_updated": "2026-08-24T21:57:54.423384",
+    "runs": 1,
+    "success_runs": 1,
+    "confidence_score": 0.6,
+    "last_updated": "2026-08-25T22:18:41.907769",
     "procedural_steps": [
       {
         "go_to_url": {
-          "url": "https://news.ycombinator.com"
+          "url": "https://github.com"
+        }
+      },
+      {
+        "input_text": {
+          "index": 7,
+          "text": "browser-use"
+        }
+      },
+      {
+        "input_text": {
+          "index": 1,
+          "text": "browser-use"
+        }
+      },
+      {
+        "send_keys": {
+          "keys": "Enter"
+        }
+      },
+      {
+        "extract_content": {
+          "goal": "Extract the search results",
+          "should_strip_link_urls": false
         }
       }
     ]

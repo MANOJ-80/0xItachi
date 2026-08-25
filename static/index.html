@@ -15,6 +15,7 @@
       --accent-cyan: #00F2FE;
       --accent-blue: #4FACFE;
       --accent-purple: #7F00FF;
+      --accent-red: #EF4444;
       --text-main: #F1F5F9;
       --text-muted: #94A3B8;
       --success: #10B981;
@@ -185,8 +186,14 @@
       color: #FFF;
     }
 
-    .btn-submit {
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
       margin-top: 1.25rem;
+    }
+
+    .btn-submit {
+      flex: 2;
       background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
       border: none;
       border-radius: 12px;
@@ -205,6 +212,27 @@
       box-shadow: 0 6px 24px rgba(0, 242, 254, 0.45);
     }
 
+    .btn-stop {
+      flex: 1;
+      background: linear-gradient(135deg, #DC2626, #991B1B);
+      border: none;
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      color: #FFF;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: none;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+    }
+
+    .btn-stop:hover {
+      background: linear-gradient(135deg, #EF4444, #B91C1C);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+    }
+
     .console-box {
       background: #050608;
       border: 1px solid rgba(255, 255, 255, 0.05);
@@ -221,13 +249,16 @@
     }
 
     .log-line {
-      line-height: 1.4;
+      line-height: 1.5;
       color: var(--text-muted);
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .log-line.status { color: var(--accent-cyan); }
     .log-line.success { color: var(--success); font-weight: 600; }
     .log-line.error { color: #EF4444; }
+    .log-line.warn { color: #F59E0B; }
 
     footer {
       border-top: 1px solid var(--border-color);
@@ -267,7 +298,10 @@
         </div>
       </div>
 
-      <button class="btn-submit" id="runBtn" onclick="submitTask()">Execute Agent Flow 🚀</button>
+      <div class="btn-row">
+        <button class="btn-submit" id="runBtn" onclick="submitTask()">Execute Agent Flow 🚀</button>
+        <button class="btn-stop" id="stopBtn" onclick="stopTask()">Stop Task 🛑</button>
+      </div>
     </div>
 
     <div class="card">
@@ -283,6 +317,9 @@
   </footer>
 
   <script>
+    let currentTaskId = null;
+    let currentEventSource = null;
+
     const presets = {
       'SauceDemo Checkout Test': "Go to https://www.saucedemo.com, login with username 'standard_user' and password 'secret_sauce', sort products by 'Price (low to high)', add the cheapest product to cart, navigate to cart, click checkout, fill First Name with 'Autonomous', Last Name with 'Agent', Zip Code with '90210', click Continue, and extract the Total Price from the summary page",
       'GitHub Repository Search': "Go to https://github.com, search for 'browser-use', navigate to the official repository, and extract the star count and description.",
@@ -299,10 +336,12 @@
 
       const consoleBox = document.getElementById('consoleBox');
       const runBtn = document.getElementById('runBtn');
+      const stopBtn = document.getElementById('stopBtn');
 
       consoleBox.innerHTML = `<div class="log-line status">⏳ Submitting task to 0xItachi backend...</div>`;
       runBtn.disabled = true;
-      runBtn.innerText = "Executing Agent Task...";
+      runBtn.innerText = "Executing Agent Flow...";
+      stopBtn.style.display = "block";
 
       try {
         const res = await fetch('/api/run-task', {
@@ -313,47 +352,70 @@
         const data = await res.json();
 
         if (data.task_id) {
+          currentTaskId = data.task_id;
           consoleBox.innerHTML += `<div class="log-line status">✅ Task Queued (ID: ${data.task_id.substring(0, 8)}...). Connecting SSE stream...</div>`;
           listenToTaskStream(data.task_id);
         } else {
           consoleBox.innerHTML += `<div class="log-line error">❌ Error: ${data.error || 'Failed to start'}</div>`;
-          runBtn.disabled = false;
-          runBtn.innerText = "Execute Agent Flow 🚀";
+          resetButtons();
         }
       } catch (err) {
         consoleBox.innerHTML += `<div class="log-line error">❌ Network error: ${err.message}</div>`;
-        runBtn.disabled = false;
-        runBtn.innerText = "Execute Agent Flow 🚀";
+        resetButtons();
       }
     }
 
-    function listenToTaskStream(taskId) {
-      const eventSource = new EventSource(`/api/task-stream/${taskId}`);
-      const consoleBox = document.getElementById('consoleBox');
-      const runBtn = document.getElementById('runBtn');
+    async function stopTask() {
+      if (!currentTaskId) return;
 
-      eventSource.onmessage = (e) => {
+      const consoleBox = document.getElementById('consoleBox');
+      consoleBox.innerHTML += `<div class="log-line warn">🛑 Requesting task abort for task ${currentTaskId.substring(0, 8)}...</div>`;
+
+      try {
+        await fetch(`/api/stop-task/${currentTaskId}`, { method: 'POST' });
+      } catch (err) {
+        console.error("Stop task error:", err);
+      }
+
+      if (currentEventSource) {
+        currentEventSource.close();
+      }
+      consoleBox.innerHTML += `<div class="log-line warn">🛑 Task execution aborted by user.</div>`;
+      resetButtons();
+    }
+
+    function resetButtons() {
+      const runBtn = document.getElementById('runBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      runBtn.disabled = false;
+      runBtn.innerText = "Execute Agent Flow 🚀";
+      stopBtn.style.display = "none";
+      currentTaskId = null;
+    }
+
+    function listenToTaskStream(taskId) {
+      currentEventSource = new EventSource(`/api/task-stream/${taskId}`);
+      const consoleBox = document.getElementById('consoleBox');
+
+      currentEventSource.onmessage = (e) => {
         const payload = JSON.parse(e.data);
         if (payload.type === 'status') {
           consoleBox.innerHTML += `<div class="log-line status">${payload.data.message}</div>`;
         } else if (payload.type === 'complete') {
           consoleBox.innerHTML += `<div class="log-line success">🎉 Task Complete!\nResult: ${payload.data.result}</div>`;
-          eventSource.close();
-          runBtn.disabled = false;
-          runBtn.innerText = "Execute Agent Flow 🚀";
+          currentEventSource.close();
+          resetButtons();
         } else if (payload.type === 'error') {
-          consoleBox.innerHTML += `<div class="log-line error">❌ Error: ${payload.data.error}</div>`;
-          eventSource.close();
-          runBtn.disabled = false;
-          runBtn.innerText = "Execute Agent Flow 🚀";
+          consoleBox.innerHTML += `<div class="log-line error">❌ Task Ended: ${payload.data.error}</div>`;
+          currentEventSource.close();
+          resetButtons();
         }
         consoleBox.scrollTop = consoleBox.scrollHeight;
       };
 
-      eventSource.onerror = () => {
-        eventSource.close();
-        runBtn.disabled = false;
-        runBtn.innerText = "Execute Agent Flow 🚀";
+      currentEventSource.onerror = () => {
+        currentEventSource.close();
+        resetButtons();
       };
     }
   </script>
